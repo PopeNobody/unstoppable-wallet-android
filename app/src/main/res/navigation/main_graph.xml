@@ -287,7 +287,15 @@
     <fragment
         android:id="@+id/marketSearchFragment"
         android:name="io.horizontalsystems.bankwallet.modules.market.search.MarketSearchFragment"
-        tools:layout="@layout/fragment_market_search" />
+        tools:layout="@layout/fragment_market_search">
+        <action
+            android:id="@+id/marketSearchFragment_to_marketAdvancedSearchFragment"
+            app:destination="@id/marketAdvancedSearchFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/marketAdvancedSearchFragment"
+        android:name="io.horizontalsystems.bankwallet.modules.market.advancedsearch.MarketAdvancedSearchFragment"
+        tools:layout="@layout/fragment_market_search_filter" />
 
     <!--  Dialogs/BottomSheets  -->
     <dialog
