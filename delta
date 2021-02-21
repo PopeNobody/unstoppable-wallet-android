@@ -1,0 +1,88 @@
+diff --git a/app/src/main/java/io/horizontalsystems/bankwallet/core/factories/AdapterFactory.kt b/app/src/main/java/io/horizontalsystems/bankwallet/core/factories/AdapterFactory.kt
+index 346021267..287f24fdb 100644
+--- a/app/src/main/java/io/horizontalsystems/bankwallet/core/factories/AdapterFactory.kt
++++ b/app/src/main/java/io/horizontalsystems/bankwallet/core/factories/AdapterFactory.kt
+@@ -32,6 +32,7 @@ class AdapterFactory(
+             is CoinType.Bitcoin -> BitcoinAdapter(wallet, derivation, syncMode, testMode, backgroundManager)
+             is CoinType.Litecoin -> LitecoinAdapter(wallet, derivation, syncMode, testMode, backgroundManager)
+             is CoinType.BitcoinCash -> BitcoinCashAdapter(wallet, syncMode, bitcoinCashCoinTypeManager?.bitcoinCashCoinType, testMode, backgroundManager)
++            is CoinType.BitcoinABC -> BitcoinABCAdapter(wallet, syncMode, bitcoinCashCoinTypeManager?.bitcoinCashCoinType, testMode, backgroundManager)
+             is CoinType.Dash -> DashAdapter(wallet, syncMode, testMode, backgroundManager)
+             is CoinType.Binance -> BinanceAdapter(binanceKitManager.binanceKit(wallet), coinType.symbol)
+             is CoinType.Ethereum -> EthereumAdapter(ethereumKitManager.ethereumKit(wallet, communicationMode))
+diff --git a/app/src/main/java/io/horizontalsystems/bankwallet/core/factories/AddressParserFactory.kt b/app/src/main/java/io/horizontalsystems/bankwallet/core/factories/AddressParserFactory.kt
+index d8d83365b..a323a6a01 100644
+--- a/app/src/main/java/io/horizontalsystems/bankwallet/core/factories/AddressParserFactory.kt
++++ b/app/src/main/java/io/horizontalsystems/bankwallet/core/factories/AddressParserFactory.kt
+@@ -11,6 +11,7 @@ class AddressParserFactory {
+             is CoinType.Bitcoin -> AddressParser("bitcoin", true)
+             is CoinType.Litecoin -> AddressParser("litecoin", true)
+             is CoinType.BitcoinCash -> AddressParser("bitcoincash", false)
++            is CoinType.BitcoinABC -> AddressParser("bitcoincash", false)
+             is CoinType.Dash -> AddressParser("dash", true)
+             is CoinType.Ethereum, is CoinType.Erc20 -> AddressParser("ethereum", true)
+             is CoinType.Binance -> AddressParser("binance", true)
+diff --git a/app/src/main/java/io/horizontalsystems/bankwallet/core/managers/AccountCleaner.kt b/app/src/main/java/io/horizontalsystems/bankwallet/core/managers/AccountCleaner.kt
+index f62486547..e34d8988b 100644
+--- a/app/src/main/java/io/horizontalsystems/bankwallet/core/managers/AccountCleaner.kt
++++ b/app/src/main/java/io/horizontalsystems/bankwallet/core/managers/AccountCleaner.kt
+@@ -27,6 +27,7 @@ class AccountCleaner(private val testMode: Boolean) : IAccountCleaner {
+         BinanceAdapter.clear(accountId, testMode)
+         BitcoinAdapter.clear(accountId, testMode)
+         BitcoinCashAdapter.clear(accountId, testMode)
++        BitcoinABCAdapter.clear(accountId, testMode)
+         DashAdapter.clear(accountId, testMode)
+         EthereumAdapter.clear(accountId, testMode)
+         Erc20Adapter.clear(accountId, testMode)
+diff --git a/app/src/main/java/io/horizontalsystems/bankwallet/core/managers/RateManager.kt b/app/src/main/java/io/horizontalsystems/bankwallet/core/managers/RateManager.kt
+index c14294778..db6b0167c 100644
+--- a/app/src/main/java/io/horizontalsystems/bankwallet/core/managers/RateManager.kt
++++ b/app/src/main/java/io/horizontalsystems/bankwallet/core/managers/RateManager.kt
+@@ -146,6 +146,7 @@ class RateManager(
+         return when (coinType) {
+             is Bitcoin -> CoinType.Bitcoin
+             is BitcoinCash -> CoinType.BitcoinCash
++            is BitcoinABC -> CoinType.BitcoinABC
+             is Dash -> CoinType.Dash
+             is Ethereum -> CoinType.Ethereum
+             is Litecoin -> CoinType.Litecoin
+diff --git a/app/src/main/java/io/horizontalsystems/bankwallet/entities/CoinType.kt b/app/src/main/java/io/horizontalsystems/bankwallet/entities/CoinType.kt
+index 7e29900da..2dcfceb04 100644
+--- a/app/src/main/java/io/horizontalsystems/bankwallet/entities/CoinType.kt
++++ b/app/src/main/java/io/horizontalsystems/bankwallet/entities/CoinType.kt
+@@ -15,6 +15,9 @@ sealed class CoinType : Parcelable {
+     @Parcelize
+     object BitcoinCash : CoinType()
+ 
++    @Parcelize
++    object BitcoinABC : CoinType()
++
+     @Parcelize
+     object Dash : CoinType()
+ 
+@@ -71,7 +74,7 @@ sealed class CoinType : Parcelable {
+ 
+     val predefinedAccountType: PredefinedAccountType
+         get() = when (this) {
+-            Bitcoin, Litecoin, BitcoinCash, Dash, Ethereum, is Erc20 -> PredefinedAccountType.Standard
++            Bitcoin, Litecoin, BitcoinCash, BitcoinABC, Dash, Ethereum, is Erc20 -> PredefinedAccountType.Standard
+             is Binance -> PredefinedAccountType.Binance
+             Zcash -> PredefinedAccountType.Zcash
+         }
+@@ -80,7 +83,7 @@ sealed class CoinType : Parcelable {
+         get() = this is Ethereum || this is Erc20
+ 
+     fun canSupport(accountType: AccountType) = when (this) {
+-        Bitcoin, Litecoin, BitcoinCash, Dash, Ethereum, is Erc20 -> {
++        Bitcoin, Litecoin, BitcoinCash, BitcoinABC, Dash, Ethereum, is Erc20 -> {
+             accountType is AccountType.Mnemonic && accountType.words.size == 12 && accountType.salt == null
+         }
+         is Binance -> {
+@@ -96,6 +99,7 @@ sealed class CoinType : Parcelable {
+             Bitcoin -> bitcoin
+             Litecoin -> litecoin
+             BitcoinCash -> bitcoinCash
++            BitcoinABC -> bitcoinCash
+             Dash -> dash
+             Ethereum -> ethereum
+             is Erc20 -> arrayOf(erc20, address).joinToString(separator)
